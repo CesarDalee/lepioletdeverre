@@ -1,10 +1,21 @@
 import { NextResponse } from "next/server"
 import { Resend } from "resend"
 
-const resend = new Resend(process.env.RESEND_API_KEY)
-
 export async function POST(request: Request) {
   try {
+    const apiKey = process.env.RESEND_API_KEY
+    const to = process.env.CONTACT_TO_EMAIL
+    const from =
+      process.env.CONTACT_FROM_EMAIL || "Le Piolet de Verre <contact@embraz.fr>"
+
+    if (!apiKey) {
+      return NextResponse.json({ error: "RESEND_API_KEY manquante." }, { status: 500 })
+    }
+
+    if (!to) {
+      return NextResponse.json({ error: "CONTACT_TO_EMAIL manquante." }, { status: 500 })
+    }
+
     const body = await request.json()
 
     const entreprise = String(body.entreprise || "").trim()
@@ -12,43 +23,22 @@ export async function POST(request: Request) {
     const telephone = String(body.telephone || "").trim()
 
     if (!entreprise || !email || !telephone) {
-      return NextResponse.json(
-        { error: "Champs requis manquants." },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: "Champs requis manquants." }, { status: 400 })
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
     if (!emailRegex.test(email)) {
-      return NextResponse.json(
-        { error: "Adresse email invalide." },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: "Adresse email invalide." }, { status: 400 })
     }
 
-    const to = process.env.CONTACT_TO_EMAIL
-    const from = process.env.CONTACT_FROM_EMAIL || "onboarding@resend.dev"
+    const resend = new Resend(apiKey)
 
-    if (!process.env.RESEND_API_KEY) {
-      return NextResponse.json(
-        { error: "RESEND_API_KEY manquante." },
-        { status: 500 }
-      )
-    }
-
-    if (!to) {
-      return NextResponse.json(
-        { error: "Adresse de réception non configurée." },
-        { status: 500 }
-      )
-    }
-
-    await resend.emails.send({
+    const result = await resend.emails.send({
       from,
       to,
       replyTo: email,
-      subject: `Nouvelle demande entreprise — Le Piolet de Verre`,
+      subject: "Nouvelle demande entreprise — Le Piolet de Verre",
       text: `
 Nouvelle demande entreprise :
 
@@ -66,8 +56,15 @@ Téléphone : ${telephone}
       `,
     })
 
+    if (result.error) {
+      console.error("Resend error:", result.error)
+      return NextResponse.json({ error: result.error.message }, { status: 500 })
+    }
+
     return NextResponse.json({ success: true })
   } catch (error) {
+    console.error("Contact API error:", error)
+
     return NextResponse.json(
       {
         error:

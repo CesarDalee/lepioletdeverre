@@ -111,12 +111,14 @@ export default function Page() {
       body: JSON.stringify(data),
     })
 
-    if (res.ok) {
-      alert("Demande envoyée.")
-      setIsPopupOpen(false)
-    } else {
-      alert("Erreur lors de l’envoi.")
-    }
+    const result = await res.json()
+
+  if (res.ok) {
+    alert("Demande envoyée.")
+    setIsPopupOpen(false)
+  } else {
+    alert(result.error || "Erreur lors de l’envoi.")
+  }
   }
 
   return (
