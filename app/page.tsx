@@ -752,7 +752,7 @@ export default function Page() {
                 <ShieldCheck key="shield" size={24} />,
                 "Accompagnement",
                 "Préparation mentale, soutien individuel.",
-                "scale-110 object-[center_40%]",
+                "scale-150 object-[center_50%]",
               ],
             ].map(([img, icon, title, text, imageClassName]) => (
               <article key={String(title)}>
